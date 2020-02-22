@@ -1,0 +1,12 @@
+mpu6050.c:5:17:mpu_read_register	32	static
+mpu6050.c:15:19:mpu_write_register	32	static
+mpu6050.c:31:12:mpu_init	24	static
+mpu6050.c:43:12:mpu_sleep	24	static
+mpu6050.c:54:12:mpu_set_gyro_range	24	static
+mpu6050.c:61:12:mpu_set_accel_range	24	static
+mpu6050.c:68:12:mpu_set_clksel	24	static
+mpu6050.c:75:12:mpu_get_gyro	40	static
+mpu6050.c:86:12:mpu_get_accel	40	static
+mpu6050.c:97:6:mpu_get_angles	64	static
+mpu6050.c:112:9:mpu_get_gyro_xout	24	static
+mpu6050.c:116:9:mpu_get_gyro_yout	24	static
