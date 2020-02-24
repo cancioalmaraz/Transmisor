@@ -27,6 +27,7 @@
 #include "i2c_lcd.h"
 #include "gps.h"
 #include "mpu6050.h"
+#include "bmp280.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,6 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define SEALEVELPRESSURE_HPA (1013.25)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,6 +70,9 @@ mpu accel;
 mpu_config accel_config;
 float angs[3], lastAngs[3];
 
+BMP280_HandleTypedef bmp280;
+float pressure, temperature, humidity, altitude;
+
 uint32_t lastTimeLoop = 0, lastTimeShow = 0, lastTimeHeart = 0, lastTimeSend = 0;
 
 uint64_t DireccionTransmisor = 0x11223344AA;
@@ -76,7 +81,7 @@ char message[100];
 uint8_t size;
 uint8_t numScreen = 1;
 uint16_t heart = 0;
-int16_t temperature = 0, heartRate = 0;
+int16_t heartRate = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -202,6 +207,14 @@ int main(void)
   }
   //-----------------------------------------------------------//
 
+  bmp280_init_default_params(&bmp280.params);
+  bmp280.addr = BMP280_I2C_ADDRESS_0;
+  bmp280.i2c = &hi2c2;
+
+  while (!bmp280_init(&bmp280, &bmp280.params)) {
+	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+	  HAL_Delay(2000);
+  }
   /* USER CODE END 2 */
  
  
@@ -213,9 +226,9 @@ int main(void)
 	  if( HAL_GetTick()-lastTimeSend>10){
 		  //------------Empaquetando datos-----------//
 
-		  sprintf(message, "$%3i,%3.0f,%3.0f,%2i,%2d,%2d,%2d,%4.0f,%2.0f", heartRate, angs[Angle_Pitch], angs[Angle_Roll],
-																		   temperature, gpsTx.data.hour, gpsTx.data.min, gpsTx.data.sec,
-																		   gpsTx.data.altitude, gpsTx.data.velocity);
+		  sprintf(message, "%3i,%3.0f,%3.0f,%2.0f,%6.0f,%2.0f,%4.0f,%2.0f", heartRate, angs[Angle_Pitch], angs[Angle_Roll],
+																		   temperature, pressure, humidity,
+																		   altitude, gpsTx.data.velocity);
 		  NRF24_write(message, 32);
 		  lastTimeSend = HAL_GetTick();
 
@@ -231,19 +244,19 @@ int main(void)
 		  if (HAL_GetTick()-lastTimeShow > 0 && HAL_GetTick()-lastTimeShow < 10000){
 
 			  i2c_lcd_setCursor(&lcd, 0, 0);
-			  size = sprintf(message, " %2d - %2d - %4d ", gpsTx.data.day, gpsTx.data.month, gpsTx.data.year);
+			  size = sprintf(message, "%2i:%2i:%2i  A:%4.0f", gpsTx.data.hour, gpsTx.data.min, gpsTx.data.sec, altitude);
 			  i2c_lcd_print(&lcd, message, size);
 
 			  i2c_lcd_setCursor(&lcd, 0, 1);
-			  size = sprintf(message, "%2i:%2i:%2i  A:%4.0f", gpsTx.data.hour, gpsTx.data.min, gpsTx.data.sec, gpsTx.data.altitude);
+			  size = sprintf(message, "Pr:%6.0f Hum:%2.0f", pressure, humidity);
 			  i2c_lcd_print(&lcd, message, size);
 
 			  i2c_lcd_setCursor(&lcd, 0, 2);
-			  size = sprintf(message, "Vel:%2.0f   Sat:%2d", gpsTx.data.velocity, gpsTx.data.satellites);
+			  size = sprintf(message, "Vel:%2.0f  Temp: %2.0f", gpsTx.data.velocity, temperature);
 			  i2c_lcd_print(&lcd, message, size);
 
 			  i2c_lcd_setCursor(&lcd, 0, 3);
-			  size = sprintf(message, "  P:%3.0f R:%3.0f  ", angs[Angle_Pitch], angs[Angle_Roll]);
+			  size = sprintf(message, "  P:%3.0f R:%3.0f   ", angs[Angle_Pitch], angs[Angle_Roll]);
 			  i2c_lcd_print(&lcd, message, size);
 
 			  //i2c_lcd_setCursor(&lcd, 0, 3);
@@ -252,19 +265,20 @@ int main(void)
 		  }
 		  else if (HAL_GetTick()-lastTimeShow > 10000 && HAL_GetTick()-lastTimeShow < 15000){
 			  i2c_lcd_setCursor(&lcd, 0, 0);
-			  size = sprintf(message, "%3.12f", gpsTx.data.latitudDec);
+			  size = sprintf(message, " %2d - %2d - %4d ", gpsTx.data.day, gpsTx.data.month, gpsTx.data.year);
+
 			  i2c_lcd_print(&lcd, message, size);
 
 			  i2c_lcd_setCursor(&lcd, 0, 1);
-			  size = sprintf(message, "%3.12f", gpsTx.data.longitudDec);
+			  size = sprintf(message, "                ");
 			  i2c_lcd_print(&lcd, message, size);
 
 			  i2c_lcd_setCursor(&lcd, 0, 2);
-			  size = sprintf(message, "                ");
+			  size = sprintf(message, "%3.12f", gpsTx.data.latitudDec);
 			  i2c_lcd_print(&lcd, message, size);
 
 			  i2c_lcd_setCursor(&lcd, 0, 3);
-			  size = sprintf(message, "                ");
+			  size = sprintf(message, "%3.12f", gpsTx.data.longitudDec);
 			  i2c_lcd_print(&lcd, message, size);
 		  }
 		  else{
@@ -294,6 +308,8 @@ int main(void)
 
 	  if ( HAL_GetTick()-lastTimeHeart > 1 ){
 		  mpu_get_angles(&accel, lastAngs, angs, (HAL_GetTick()-lastTimeHeart)/1000);
+		  bmp280_read_float(&bmp280, &temperature, &pressure, &humidity);
+		  altitude = readAltitude(SEALEVELPRESSURE_HPA, pressure);
 		  HAL_ADC_Start(&hadc3);
 		  if(HAL_ADC_PollForConversion(&hadc3, 10)==HAL_OK){
 			  heart = HAL_ADC_GetValue(&hadc3);

@@ -5,6 +5,7 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Src/MY_NRF24.c \
+../Core/Src/bmp280.c \
 ../Core/Src/gps.c \
 ../Core/Src/i2c_lcd.c \
 ../Core/Src/main.c \
@@ -17,6 +18,7 @@ C_SRCS += \
 
 OBJS += \
 ./Core/Src/MY_NRF24.o \
+./Core/Src/bmp280.o \
 ./Core/Src/gps.o \
 ./Core/Src/i2c_lcd.o \
 ./Core/Src/main.o \
@@ -29,6 +31,7 @@ OBJS += \
 
 C_DEPS += \
 ./Core/Src/MY_NRF24.d \
+./Core/Src/bmp280.d \
 ./Core/Src/gps.d \
 ./Core/Src/i2c_lcd.d \
 ./Core/Src/main.d \
@@ -43,6 +46,8 @@ C_DEPS += \
 # Each subdirectory must supply rules for building sources it contributes
 Core/Src/MY_NRF24.o: ../Core/Src/MY_NRF24.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32F767xx -DDEBUG -c -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Core/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/MY_NRF24.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
+Core/Src/bmp280.o: ../Core/Src/bmp280.c
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32F767xx -DDEBUG -c -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Core/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/bmp280.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/gps.o: ../Core/Src/gps.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32F767xx -DDEBUG -c -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Core/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/gps.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/i2c_lcd.o: ../Core/Src/i2c_lcd.c

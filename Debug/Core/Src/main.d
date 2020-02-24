@@ -34,7 +34,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
  ../Core/Inc/MY_NRF24.h ../Core/Inc/nRF24L01.h ../Core/Inc/i2c_lcd.h \
- ../Core/Inc/gps.h ../Core/Inc/mpu6050.h
+ ../Core/Inc/gps.h ../Core/Inc/mpu6050.h ../Core/Inc/bmp280.h
 
 ../Core/Inc/main.h:
 
@@ -115,3 +115,5 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/gps.h:
 
 ../Core/Inc/mpu6050.h:
+
+../Core/Inc/bmp280.h:
