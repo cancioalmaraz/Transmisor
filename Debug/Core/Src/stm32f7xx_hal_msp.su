@@ -7,5 +7,5 @@ stm32f7xx_hal_msp.c:254:6:HAL_SPI_MspInit	48	static
 stm32f7xx_hal_msp.c:291:6:HAL_SPI_MspDeInit	16	static
 stm32f7xx_hal_msp.c:321:6:HAL_TIM_Base_MspInit	24	static
 stm32f7xx_hal_msp.c:343:6:HAL_TIM_Base_MspDeInit	16	static
-stm32f7xx_hal_msp.c:365:6:HAL_UART_MspInit	56	static
-stm32f7xx_hal_msp.c:428:6:HAL_UART_MspDeInit	16	static
+stm32f7xx_hal_msp.c:365:6:HAL_UART_MspInit	64	static
+stm32f7xx_hal_msp.c:455:6:HAL_UART_MspDeInit	16	static

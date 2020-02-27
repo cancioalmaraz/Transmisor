@@ -28,6 +28,7 @@
 #include "gps.h"
 #include "mpu6050.h"
 #include "bmp280.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,7 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim1;
 
+UART_HandleTypeDef huart7;
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart6;
 
@@ -66,18 +68,18 @@ i2c_lcd_config lcd_config;
 gps gpsTx;
 gps_config gpsTx_config;
 
-mpu accel;
-mpu_config accel_config;
+MPU_HandleTypeDef accel;
+MPU_config accel_config;
 float angs[3], lastAngs[3];
 
 BMP280_HandleTypedef bmp280;
 float pressure, temperature, humidity, altitude;
 
-uint32_t lastTimeLoop = 0, lastTimeShow = 0, lastTimeHeart = 0, lastTimeSend = 0;
+uint32_t lastTimeLoop = 0, lastTimeShow = 0, lastTimeHeart = 0, lastTimeSend = 0, lastTimeShowParent = 0, lastTimeDelay = 0;
 
 uint64_t DireccionTransmisor = 0x11223344AA;
 
-char message[100];
+char message[100], bufferConfig[10];
 uint8_t size;
 uint8_t numScreen = 1;
 uint16_t heart = 0;
@@ -93,6 +95,7 @@ static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_UART7_Init(void);
 static void MX_USART6_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -100,9 +103,39 @@ static void MX_USART6_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	gps_callBack(&gpsTx);
+
+	if (huart->Instance == USART6){
+		gps_callBack(&gpsTx);
+	}
+	if (huart->Instance == UART7){
+
+		switch (bufferConfig[0]) {
+			case 'u':
+			    accel.config.offset_pitch -= 1;
+				break;
+			case 'x':
+				accel.config.offset_pitch += 1;
+				break;
+			case 'a':
+				accel.config.offset_roll -= 1;
+				break;
+			case 'b':
+				accel.config.offset_roll += 1;
+				break;
+			case 'c':
+				gpsTx.config.gtm +=1;
+				break;
+			case 'e':
+				gpsTx.config.gtm -=1;
+				break;
+			default:
+				break;
+		}
+
+	}
 }
 
 bool isPressed(){
@@ -152,6 +185,7 @@ int main(void)
   MX_I2C2_Init();
   MX_SPI1_Init();
   MX_TIM1_Init();
+  MX_UART7_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
@@ -206,15 +240,19 @@ int main(void)
   	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
   }
   //-----------------------------------------------------------//
-
-  bmp280_init_default_params(&bmp280.params);
-  bmp280.addr = BMP280_I2C_ADDRESS_0;
-  bmp280.i2c = &hi2c2;
-
-  while (!bmp280_init(&bmp280, &bmp280.params)) {
-	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-	  HAL_Delay(2000);
+  //---------------Inicializacion de BMP280--------------------//
+  {
+	  bmp280_init_default_params(&bmp280.params);
+	  bmp280.addr = BMP280_I2C_ADDRESS_0;
+   	  bmp280.i2c = &hi2c2;
   }
+
+  if (bmp280_init(&bmp280, &bmp280.params)) {
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+  }
+  //-----------------------------------------------------------//
+
+
   /* USER CODE END 2 */
  
  
@@ -223,24 +261,48 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if( HAL_GetTick()-lastTimeSend>10){
-		  //------------Empaquetando datos-----------//
+
+	  if ( HAL_GetTick()-lastTimeLoop > 1 ){
+
+		  gps_process(&gpsTx);
+		  mpu_get_angles(&accel, lastAngs, angs, (HAL_GetTick()-lastTimeLoop)/1000);
+		  bmp280_read_float(&bmp280, &temperature, &pressure, &humidity);
+		  altitude = readAltitude(SEALEVELPRESSURE_HPA, pressure);
+		  HAL_UART_Receive_IT(&huart7, bufferConfig, 1);
+
+		  lastTimeLoop = HAL_GetTick();
+
+	  }
+
+	  if ( HAL_GetTick()-lastTimeHeart > 1 ){
+		  HAL_ADC_Start(&hadc3);
+		  if(HAL_ADC_PollForConversion(&hadc3, 10)==HAL_OK){
+			  heart = HAL_ADC_GetValue(&hadc3);
+			  size = sprintf(message, "%i\r\n", heart);
+			  HAL_UART_Transmit(&huart3, message, size, 100);
+		  }
+
+		  lastTimeHeart = HAL_GetTick();
+
+	  }
+
+	  //----------------------------------Empaquetando datos--------------------------------------//
+	  if( HAL_GetTick()-lastTimeSend > 10 ){
 
 		  sprintf(message, "%3i,%3.0f,%3.0f,%2.0f,%6.0f,%2.0f,%4.0f,%2.0f", heartRate, angs[Angle_Pitch], angs[Angle_Roll],
 																		   temperature, pressure, humidity,
 																		   altitude, gpsTx.data.velocity);
 		  NRF24_write(message, 32);
+
 		  lastTimeSend = HAL_GetTick();
 
-		  //-----------------------------------------//
 	  }
 
-	  if ( HAL_GetTick()-lastTimeLoop > 100 ){
-		  gps_process(&gpsTx);
+	  //-------------------------------Mostrar datos por pantalla LCD------------------------------//
+	  if ( HAL_GetTick()-lastTimeShowParent > 50 ){
 
-		  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+		  lastTimeDelay = HAL_GetTick();
 
-		  //-----Mostrar datos por pantalla LCD------//
 		  if (HAL_GetTick()-lastTimeShow > 0 && HAL_GetTick()-lastTimeShow < 10000){
 
 			  i2c_lcd_setCursor(&lcd, 0, 0);
@@ -259,14 +321,11 @@ int main(void)
 			  size = sprintf(message, "  P:%3.0f R:%3.0f   ", angs[Angle_Pitch], angs[Angle_Roll]);
 			  i2c_lcd_print(&lcd, message, size);
 
-			  //i2c_lcd_setCursor(&lcd, 0, 3);
-			  //size = sprintf(message, "Lon:%f", gpsTx.data.longitudDec);
-			  //i2c_lcd_print(&lcd, message, size);
 		  }
 		  else if (HAL_GetTick()-lastTimeShow > 10000 && HAL_GetTick()-lastTimeShow < 15000){
+
 			  i2c_lcd_setCursor(&lcd, 0, 0);
 			  size = sprintf(message, " %2d - %2d - %4d ", gpsTx.data.day, gpsTx.data.month, gpsTx.data.year);
-
 			  i2c_lcd_print(&lcd, message, size);
 
 			  i2c_lcd_setCursor(&lcd, 0, 1);
@@ -280,20 +339,29 @@ int main(void)
 			  i2c_lcd_setCursor(&lcd, 0, 3);
 			  size = sprintf(message, "%3.12f", gpsTx.data.longitudDec);
 			  i2c_lcd_print(&lcd, message, size);
+
 		  }
 		  else{
 			  lastTimeShow = HAL_GetTick();
 		  }
-		  //-----------------------------------------//
 
+		  if ( HAL_GPIO_ReadPin(BT_State_GPIO_Port, BT_State_Pin) == GPIO_PIN_SET ){
 
-		  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+			  size = sprintf(message, "*T%.0f C* *H%.0f%%* *A%.0f msnm* *V%.0f* *P%.0f* *R%.0f* *Z%d* %u\r\n", temperature, humidity, altitude,
+																									 gpsTx.data.velocity,
+																									 angs[Angle_Pitch], angs[Angle_Roll],
+																									 gpsTx.config.gtm, (HAL_GetTick()-lastTimeDelay));
 
-		  lastTimeLoop = HAL_GetTick();
+			  HAL_UART_Transmit(&huart7, message, size, 100);
+
+		  }
+
+		  lastTimeShowParent = HAL_GetTick();
 
 	  }
 
 	  if(isPressed()){
+
 		  uint32_t lastTime = HAL_GetTick();
 		  while(HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin)==GPIO_PIN_SET);
 		  if (HAL_GetTick()-lastTime < 1000 ){
@@ -304,22 +372,8 @@ int main(void)
 			  accel.config.offset_pitch = 0;
 			  accel.config.offset_roll = 0;
 		  }
+
 	  }
-
-	  if ( HAL_GetTick()-lastTimeHeart > 1 ){
-		  mpu_get_angles(&accel, lastAngs, angs, (HAL_GetTick()-lastTimeHeart)/1000);
-		  bmp280_read_float(&bmp280, &temperature, &pressure, &humidity);
-		  altitude = readAltitude(SEALEVELPRESSURE_HPA, pressure);
-		  HAL_ADC_Start(&hadc3);
-		  if(HAL_ADC_PollForConversion(&hadc3, 10)==HAL_OK){
-			  heart = HAL_ADC_GetValue(&hadc3);
-		      size = sprintf(message, "%i\r\n", heart);
-			  HAL_UART_Transmit(&huart3, message, size, 100);
-		  }
-		  lastTimeHeart = HAL_GetTick();
-	  }
-
-
 
     /* USER CODE END WHILE */
 
@@ -379,9 +433,11 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_USART6
-                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_I2C2;
+                              |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_I2C1
+                              |RCC_PERIPHCLK_I2C2;
   PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
+  PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_PCLK1;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
@@ -620,6 +676,41 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief UART7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART7_Init(void)
+{
+
+  /* USER CODE BEGIN UART7_Init 0 */
+
+  /* USER CODE END UART7_Init 0 */
+
+  /* USER CODE BEGIN UART7_Init 1 */
+
+  /* USER CODE END UART7_Init 1 */
+  huart7.Instance = UART7;
+  huart7.Init.BaudRate = 9600;
+  huart7.Init.WordLength = UART_WORDLENGTH_8B;
+  huart7.Init.StopBits = UART_STOPBITS_1;
+  huart7.Init.Parity = UART_PARITY_NONE;
+  huart7.Init.Mode = UART_MODE_TX_RX;
+  huart7.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart7.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart7.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart7.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART7_Init 2 */
+
+  /* USER CODE END UART7_Init 2 */
+
+}
+
+/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -704,6 +795,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
@@ -744,6 +836,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BT_State_Pin */
+  GPIO_InitStruct.Pin = BT_State_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BT_State_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : RMII_TXD1_Pin */
   GPIO_InitStruct.Pin = RMII_TXD1_Pin;

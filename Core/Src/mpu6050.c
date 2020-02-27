@@ -2,7 +2,7 @@
 
 //-----------------------Functions read and write registers-------------------
 
-static uint16_t mpu_read_register(mpu* dev, MPU_REGISTER reg){
+static uint16_t mpu_read_register(MPU_HandleTypeDef* dev, MPU_REGISTER reg){
 
 	uint8_t buffer[1];
 	buffer[0] = reg;
@@ -12,7 +12,7 @@ static uint16_t mpu_read_register(mpu* dev, MPU_REGISTER reg){
 
 }
 
-static MPU_RESULT mpu_write_register(mpu* dev, MPU_REGISTER reg, uint8_t data){
+static MPU_RESULT mpu_write_register(MPU_HandleTypeDef* dev, MPU_REGISTER reg, uint8_t data){
 
 	uint8_t buffer[2];
 	buffer[0] = reg;
@@ -28,7 +28,7 @@ static MPU_RESULT mpu_write_register(mpu* dev, MPU_REGISTER reg, uint8_t data){
 
 //----------------------------------------------------------------------------
 
-MPU_RESULT mpu_init(mpu* dev, mpu_config* config){
+MPU_RESULT mpu_init(MPU_HandleTypeDef* dev, MPU_config* config){
 	dev->config = *config;
 	if (HAL_I2C_IsDeviceReady(dev->config.i2c, dev->config.addres<<1, 10, dev->config.timeout)==HAL_OK){
 		mpu_set_clksel(dev, dev->config.clksel);
@@ -40,7 +40,7 @@ MPU_RESULT mpu_init(mpu* dev, mpu_config* config){
 	return MPU_ERROR;
 }
 
-MPU_RESULT mpu_sleep(mpu* dev, bool state){
+MPU_RESULT mpu_sleep(MPU_HandleTypeDef* dev, bool state){
 	uint8_t value = mpu_read_register(dev, PWR_MGMT_1);
 	if (state){
 		value |= (1<<6);
@@ -51,28 +51,28 @@ MPU_RESULT mpu_sleep(mpu* dev, bool state){
 	return mpu_write_register(dev, PWR_MGMT_1, value);
 }
 
-MPU_RESULT mpu_set_gyro_range(mpu* dev, MPU_GYRO_RANGE range){
+MPU_RESULT mpu_set_gyro_range(MPU_HandleTypeDef* dev, MPU_GYRO_RANGE range){
 	uint8_t value = mpu_read_register(dev, GYRO_CONFIG);
 	value &= ~(0x03<<3);
 	value |= (range<<3);
 	return mpu_write_register(dev, GYRO_CONFIG, value);
 }
 
-MPU_RESULT mpu_set_accel_range(mpu* dev, MPU_ACCEL_RANGE range){
+MPU_RESULT mpu_set_accel_range(MPU_HandleTypeDef* dev, MPU_ACCEL_RANGE range){
 	uint8_t value = mpu_read_register(dev, ACCEL_CONFIG);
 	value &= ~(0x03<<3);
 	value |= (range<<3);
 	return mpu_write_register(dev, ACCEL_CONFIG, value);
 }
 
-MPU_RESULT mpu_set_clksel(mpu* dev, MPU_CLKSEL clk){
+MPU_RESULT mpu_set_clksel(MPU_HandleTypeDef* dev, MPU_CLKSEL clk){
 	uint8_t value = mpu_read_register(dev, PWR_MGMT_1);
 	value &= ~(0x07);
 	value |= (clk);
 	return mpu_write_register(dev, PWR_MGMT_1, value);
 }
 
-MPU_RESULT mpu_get_gyro(mpu* dev, int16_t* x, int16_t *y, int16_t *z){
+MPU_RESULT mpu_get_gyro(MPU_HandleTypeDef* dev, int16_t* x, int16_t *y, int16_t *z){
 	uint8_t buffer[6];
 	buffer[0] = GYRO_XOUT_H;
 	HAL_I2C_Master_Transmit(dev->config.i2c, (dev->config.addres)<<1, buffer, 1, dev->config.timeout);
@@ -83,7 +83,7 @@ MPU_RESULT mpu_get_gyro(mpu* dev, int16_t* x, int16_t *y, int16_t *z){
 	return MPU_OK;
 }
 
-MPU_RESULT mpu_get_accel(mpu* dev, int16_t* x, int16_t *y, int16_t *z){
+MPU_RESULT mpu_get_accel(MPU_HandleTypeDef* dev, int16_t* x, int16_t *y, int16_t *z){
 	uint8_t buffer[6];
 	buffer[0] = ACCEL_XOUT_H;
 	HAL_I2C_Master_Transmit(dev->config.i2c, (dev->config.addres)<<1, buffer, 1, dev->config.timeout);
@@ -94,7 +94,7 @@ MPU_RESULT mpu_get_accel(mpu* dev, int16_t* x, int16_t *y, int16_t *z){
 	return MPU_OK;
 }
 
-void mpu_get_angles(mpu* dev, float* lastAngs, float* angs, float dif){
+void mpu_get_angles(MPU_HandleTypeDef* dev, float* lastAngs, float* angs, float dif){
 	int16_t ax, ay, az, gx, gy, gz;
 	float ang_p, ang_r;
 	for (uint8_t i = 0; i < 3; i++){
@@ -109,11 +109,11 @@ void mpu_get_angles(mpu* dev, float* lastAngs, float* angs, float dif){
 	*angs = *lastAngs + ((float)gy/131.0)*dif;
 }
 
-int16_t mpu_get_gyro_xout(mpu* dev){
+int16_t mpu_get_gyro_xout(MPU_HandleTypeDef* dev){
 	return (mpu_read_register(dev, GYRO_XOUT_H)<<8) | mpu_read_register(dev, GYRO_XOUT_L);
 }
 
-int16_t mpu_get_gyro_yout(mpu* dev){
+int16_t mpu_get_gyro_yout(MPU_HandleTypeDef* dev){
 	return (mpu_read_register(dev, GYRO_YOUT_H)<<8) | mpu_read_register(dev, GYRO_YOUT_L);
 }
 

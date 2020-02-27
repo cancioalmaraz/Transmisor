@@ -147,30 +147,30 @@ typedef struct {
 	int16_t offset_pitch;
 	int16_t offset_roll;
 
-} mpu_config;
+} MPU_config;
 
 typedef struct {
 
-	mpu_config config;
+	MPU_config config;
 
-} mpu;
+} MPU_HandleTypeDef;
 
-MPU_RESULT mpu_init(mpu* dev, mpu_config* config);
+MPU_RESULT mpu_init(MPU_HandleTypeDef* dev, MPU_config* config);
 
-MPU_RESULT mpu_sleep(mpu* dev, bool state);
+MPU_RESULT mpu_sleep(MPU_HandleTypeDef* dev, bool state);
 
-MPU_RESULT mpu_set_gyro_range(mpu* dev, MPU_GYRO_RANGE range);
+MPU_RESULT mpu_set_gyro_range(MPU_HandleTypeDef* dev, MPU_GYRO_RANGE range);
 
-MPU_RESULT mpu_set_accel_range(mpu* dev, MPU_ACCEL_RANGE range);
+MPU_RESULT mpu_set_accel_range(MPU_HandleTypeDef* dev, MPU_ACCEL_RANGE range);
 
-MPU_RESULT mpu_set_clksel(mpu* dev, MPU_CLKSEL clk);
+MPU_RESULT mpu_set_clksel(MPU_HandleTypeDef* dev, MPU_CLKSEL clk);
 
-MPU_RESULT mpu_get_gyro(mpu* dev, int16_t* x, int16_t *y, int16_t *z);
+MPU_RESULT mpu_get_gyro(MPU_HandleTypeDef* dev, int16_t* x, int16_t *y, int16_t *z);
 
-MPU_RESULT mpu_get_accel(mpu* dev, int16_t* x, int16_t *y, int16_t *z);
+MPU_RESULT mpu_get_accel(MPU_HandleTypeDef* dev, int16_t* x, int16_t *y, int16_t *z);
 
-void mpu_get_angles(mpu* dev, float* lastAngs, float* angs, float dif);
+void mpu_get_angles(MPU_HandleTypeDef* dev, float* lastAngs, float* angs, float dif);
 
-int16_t mpu_get_gyro_xout(mpu* dev);
+int16_t mpu_get_gyro_xout(MPU_HandleTypeDef* dev);
 
-int16_t mpu_get_gyro_yout(mpu* dev);
+int16_t mpu_get_gyro_yout(MPU_HandleTypeDef* dev);
