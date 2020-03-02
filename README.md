@@ -45,7 +45,7 @@ Aqui tenemos las imagenes:
 ## Inicializacion de Componentes
 En este apartado se detallará cada inicializacion por componente, es importante saber que tipo de configuraciones tienen para poder aprovechar todas sus bondades al máximo.
 
-Cabe recalcar encarecidamente que existen componentes que no se inician, tales como el sensor de pulso cardiaco o el sensor de rayos UV, debido a que su lectura es netamente analógica y su  posterior lectura sólo consiste en acomodar los datos para su posterior envío/visualización.
+Cabe recalcar encarecidamente que existen componentes que no se inician, tales como el sensor de pulso cardiaco o el sensor de rayos UV, debido a que su lectura es netamente analógica y su lectura sólo consiste en obtener y acomodar los datos para su posterior envío/visualización.
 
 ### Antena de Comunicación NRF24L01
 Este componente trabaja sobre los 2,4Ghz, tiene codificación por tubos de direcciones de hasta 5 bytes (0 - (2ˆ(40)-1) ) y  canales rf (0-124), también tenemos la opción de poder elegir la velocidad a la que trabaja. Nos da la posibilidad de comunicarnos con la central de tierra y transmitir todos los datos obtenidos.
