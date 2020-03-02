@@ -1,5 +1,6 @@
 # Transmisor
  Aqui se encuentra el codigo del sistema de telemetria para el rover challenge.
+ Este dispositivo es el encargado de recolectar todos los datos del viaje, para que así estos 
  Se tendra una revision tanto más **técnica** como detalles acerca de la programación.
  
  - Configuración de Pines y e Interfaces de Comunicación
@@ -24,3 +25,12 @@ Aqui tenemos las imagenes:
 ![Captura de Pantalla 2020-03-02 a la(s) 10 42 58](https://user-images.githubusercontent.com/47458067/75687423-28e0bc00-5c74-11ea-85eb-f80f47c5bd80.png)
 
 ## Inicializacion de Componentes
+En este apartado se detallará cada inicializacion por componente, es importante saber que tipo de configuracion es tienen para poder aprovechar todas sus bondades al máximo.
+
+### Antena de Comunicación NRF24L01
+Este componente trabaja sobre los 2,4Ghz, tiene codificación por tubos de direcciones de hasta 5 bytes (0 - (2ˆ(40)-1) ) y  canales rf (0-124), también tenemos la opción de poder elegir la velocidad a la que trabaja. Nos da la posibilidad de comunicarnos con la central de tierra y transmitir todos los datos obtenidos.
+
+![Captura de Pantalla 2020-03-02 a la(s) 11 16 12](https://user-images.githubusercontent.com/47458067/75689556-c4bff700-5c77-11ea-880e-24cf4e0d10b9.png)
+
+### GPS neo 6m
+Este GPS nos da
