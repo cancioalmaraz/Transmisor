@@ -1,6 +1,7 @@
 # Transmisor
  Aqui se encuentra el codigo del sistema de telemetria para el rover challenge.
- Este dispositivo es el encargado de recolectar todos los datos del viaje, para que así estos 
+ Este dispositivo es el encargado de recolectar todos los datos del viaje, para que así estos sean visualizados.
+ 
  Se tendra una revision tanto más **técnica** como detalles acerca de la programación.
  
  - Configuración de Pines y e Interfaces de Comunicación
