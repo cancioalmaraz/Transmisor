@@ -25,7 +25,7 @@
 
 **Las implementaciones Core/Src/**
 
-**IMPORTANTE: El diseño del PCB de este sistema de telemetría se encuentra aqui https://easyeda.com/cancioalmaraz/transmisor**
+**IMPORTANTE: El diseño del PCB de este sistema de telemetría se encuentra aqui: https://easyeda.com/cancioalmaraz/transmisor**
   
 ## Configuración de Pines e Interfaces de Comunicación
 Para poder aclarar la distribucion de los pines, cabe mencionar que para este proyecto estamos usando una placa de STmicroelectronics, mas precisamente la placa **stm32 nucleo f767zi** y el microcontrolador que lleva dentro es el
