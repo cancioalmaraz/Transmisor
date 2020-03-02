@@ -2,7 +2,7 @@
  Aqui se encuentra el codigo del sistema de telemetria para el rover challenge.
  Se tendra una revision tanto más **técnica** como detalles acerca de la programación.
 
-##Configuración de Pines y e Interfaces de Comunicación
+## Configuración de Pines y e Interfaces de Comunicación
 La configuración de los pines del microcontrolador es importante, para poder saber a que pines van conectados cada componente que se utiliza y se comunica con el MCU.
 Aqui tenemos las imagenes:
 
