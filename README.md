@@ -11,6 +11,18 @@
      - Acelerómetro MPU6050
      - Sensor BMP280
  - Programa principal
+     - Obtención de datos
+     - Obtención de datos del sensor de pulso cardiaco
+     - Visualizacion de Datos por LCD y Bluetooth
+         - Visualización por LCD
+         - Visualización por Bluetooth
+     - Función de offset de acelerometro por Hardware
+     
+**Tomar en cuenta que todo el codigo aqui mostrado se encuentra en el repositorio.**
+
+**Las cabeceras Core/Inc/**
+
+**Las implementaciones Core/Src/**
   
 ## Configuración de Pines e Interfaces de Comunicación
 Para poder aclarar la distribucion de los pines, cabe mencionar que para este proyecto estamos usando una placa de STmicroelectronics, mas precisamente la placa **stm32 nucleo f767zi** y el microcontrolador que lleva dentro es el
@@ -30,7 +42,7 @@ Aqui tenemos las imagenes:
 ![Captura de Pantalla 2020-03-02 a la(s) 10 42 58](https://user-images.githubusercontent.com/47458067/75687423-28e0bc00-5c74-11ea-85eb-f80f47c5bd80.png)
 
 ## Inicializacion de Componentes
-En este apartado se detallará cada inicializacion por componente, es importante saber que tipo de configuracion es tienen para poder aprovechar todas sus bondades al máximo.
+En este apartado se detallará cada inicializacion por componente, es importante saber que tipo de configuraciones tienen para poder aprovechar todas sus bondades al máximo.
 
 ### Antena de Comunicación NRF24L01
 Este componente trabaja sobre los 2,4Ghz, tiene codificación por tubos de direcciones de hasta 5 bytes (0 - (2ˆ(40)-1) ) y  canales rf (0-124), también tenemos la opción de poder elegir la velocidad a la que trabaja. Nos da la posibilidad de comunicarnos con la central de tierra y transmitir todos los datos obtenidos.
@@ -48,7 +60,7 @@ Este componente simplemente nos ayudará a visualizar los datos obtenidos por to
 ![Captura de Pantalla 2020-03-02 a la(s) 11 32 27](https://user-images.githubusercontent.com/47458067/75690593-8297b500-5c79-11ea-94a3-f266489fd455.png)
 
 ### Acelerómetro MPU6050
-Este pequeño acelerómetro nos ayudará a obtener los angulos de Euler para poder orientarnos (Pitch y Roll).
+Este pequeño acelerómetro nos ayudará a obtener los angulos de Euler para poder saber el estado del sistema (Pitch y Roll).
 
 ![Captura de Pantalla 2020-03-02 a la(s) 11 34 16](https://user-images.githubusercontent.com/47458067/75690751-c25e9c80-5c79-11ea-9947-fff552c1cd35.png)
 
@@ -79,16 +91,13 @@ Dado que la antena solo puede transmitir 32 bytes por vez (aunque su data rate e
 ### Visualizacion de Datos por LCD y Bluetooth
 Esta parte del codigo sirve para poder mostrar los datos a través de la pantalla LCD y envío por bluetooth, el envío por bluetooth se hace hacia una app en Android configurada para su muestreo.
 
-#### Muestreo por LCD
+#### Visualización por LCD
 ![Captura de Pantalla 2020-03-02 a la(s) 12 10 14](https://user-images.githubusercontent.com/47458067/75694366-c93bde00-5c7e-11ea-9e3d-3eb8ff1dc54a.png)
 
-#### Muestreo por Bluetooth
+#### Visualización por Bluetooth
 ![Captura de Pantalla 2020-03-02 a la(s) 12 11 27](https://user-images.githubusercontent.com/47458067/75694467-f4263200-5c7e-11ea-8dc9-9b822fca1e00.png)
 
-### Función de offset de acelerometro por botón.
+### Función de offset de acelerometro por Hardware.
 Para poder ser más prácticos a la hora de calibrar el sistema de telemetría, se incluye una implementación de código para hacerle un offset, y así poderlo configurar rapidamente.
 
 ![Captura de Pantalla 2020-03-02 a la(s) 12 16 27](https://user-images.githubusercontent.com/47458067/75694917-a78f2680-5c7f-11ea-8c69-78fb06c9b267.png)
-
-
-##
