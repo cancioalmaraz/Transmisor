@@ -62,7 +62,33 @@ Se explicará acerca de lo que hace cada pedazo de código para asi tener un mej
 (Divide y vencerás).
 
 ### Obtención de datos
-Este pedazo de codigo se encarga de recolectar todos los datos, lee todos los sensores e interfaces de comunicación, lo hace cada milisegundo, en el caso del acelerómetro es necesario que las muestras se hagan con la mayor frecuencia posible, esto debido a que, para obtener los ángulos se está utilizando un filtro de complemento (ver Core/Src/mpu6050.c) que va arreglando los errores debido al ruido que el acelerómetro produce.
+Este pedazo de codigo se encarga de recolectar todos los datos, lee todos los sensores e interfaces de comunicación, lo hace cada milisegundo, en el caso del acelerómetro es necesario que las muestras se hagan con la mayor frecuencia posible, esto debido a que, para obtener los ángulos se está utilizando un filtro de complemento (ver Core/Src/mpu6050.c mpu_get_angles()) que va arreglando los errores debido al ruido que el acelerómetro produce.
 
 ![Captura de Pantalla 2020-03-02 a la(s) 11 53 47](https://user-images.githubusercontent.com/47458067/75692823-7b25db00-5c7c-11ea-924e-9df74315a0ec.png)
 
+### Obtención de datos del sensor de pulso cardiaco
+Este sensor se encuentra fuera de la anterior función debido a que se le puede dar distinto tiempo de actualizacion para su posterior muestreo en tiempo real por el puerto serial.
+
+![Captura de Pantalla 2020-03-02 a la(s) 11 59 49](https://user-images.githubusercontent.com/47458067/75693446-53834280-5c7d-11ea-81ea-17dc155f67bd.png)
+
+### Empaquetado y envío de datos
+Dado que la antena solo puede transmitir 32 bytes por vez (aunque su data rate es elevado) es necesario acomodar los datos para su posterior envío, de esta manera la función de envío sera mucho más eficiente y se podrán enviar mas datos en menos tiempo. En nuestro caso, los datos excenden normalmente los 32 bytes, entonces es necesario contar con 2 tipos de mensajes y poder alternar entre ellos para cada envío.
+
+![Captura de Pantalla 2020-03-02 a la(s) 12 04 04](https://user-images.githubusercontent.com/47458067/75693816-ec19c280-5c7d-11ea-957a-66fe1266b6da.png)
+
+### Visualizacion de Datos por LCD y Bluetooth
+Esta parte del codigo sirve para poder mostrar los datos a través de la pantalla LCD y envío por bluetooth, el envío por bluetooth se hace hacia una app en Android configurada para su muestreo.
+
+#### Muestreo por LCD
+![Captura de Pantalla 2020-03-02 a la(s) 12 10 14](https://user-images.githubusercontent.com/47458067/75694366-c93bde00-5c7e-11ea-9e3d-3eb8ff1dc54a.png)
+
+#### Muestreo por Bluetooth
+![Captura de Pantalla 2020-03-02 a la(s) 12 11 27](https://user-images.githubusercontent.com/47458067/75694467-f4263200-5c7e-11ea-8dc9-9b822fca1e00.png)
+
+### Función de offset de acelerometro por botón.
+Para poder ser más prácticos a la hora de calibrar el sistema de telemetría, se incluye una implementación de código para hacerle un offset, y así poderlo configurar rapidamente.
+
+![Captura de Pantalla 2020-03-02 a la(s) 12 16 27](https://user-images.githubusercontent.com/47458067/75694917-a78f2680-5c7f-11ea-8c69-78fb06c9b267.png)
+
+
+##
