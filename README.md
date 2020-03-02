@@ -4,7 +4,7 @@
  
  Se tendra una revision tanto más **técnica** como detalles acerca de la programación.
  
- - Configuración de Pines y e Interfaces de Comunicación
+ - Configuración de Pines e Interfaces de Comunicación
  - Inicializacion de Componentes
      - Antena de Comunicación NRF24L01
      - GPS neo 6m
