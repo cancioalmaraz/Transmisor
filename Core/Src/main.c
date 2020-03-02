@@ -80,11 +80,10 @@ float pressure, temperature, humidity, altitude;
 
 uint32_t lastTimeLoop = 0, lastTimeShow = 0, lastTimeHeart = 0, lastTimeSend = 0, lastTimeShowParent = 0;
 
-uint64_t DireccionTransmisor = 0x11223344AA;
+uint64_t addressTx = 0x11223344AA;
 
 char message[1000], bufferConfig[10];
-uint8_t size, nmroMsg = 1;
-uint32_t delays[8], numLine = 1;
+uint8_t size, nmroMsg = 1, numLine = 1;
 uint16_t heart = 0;
 int16_t heartRate = 0;
 /* USER CODE END PV */
@@ -204,93 +203,97 @@ int main(void)
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  //---------------Inicializacion de Antena--------------------//
+  //---------------Initialization the Antenna--------------------//
+
   NRF24_begin(CSN_GPIO_Port, CSN_Pin, CE_Pin, hspi1);
 
-  NRF24_stopListening();
-  NRF24_openWritingPipe(DireccionTransmisor);
-  NRF24_setAutoAck(true);
-  NRF24_setChannel(52);
-  NRF24_setPayloadSize(32);
-  NRF24_setDataRate(RF24_250KBPS);
+  NRF24_stopListening();				//For we can change the Antenna configurations we must to stop listening
+  NRF24_openWritingPipe(addressTx);		//Change the Pipe Address Transmitter
+  NRF24_setAutoAck(true);				//Enable the Antenna Auto Ack
+  NRF24_setChannel(52);					//Setting the transmitter channel, it can take values from 0 to 124
+  NRF24_setPayloadSize(32);				//Setting the sent message size
+  NRF24_setDataRate(RF24_250KBPS);		//Change the data rate of data...250 Kbps, 1Mbps or 2Mbps
 
   NRF24_enableDynamicPayloads();
   NRF24_enableAckPayload();
-  //-----------------------------------------------------------//
-  //---------------Inicializacion de GPS-----------------------//
-  {
-	  gpsTx_config.gtm = -4;
-	  gpsTx_config.uart = &huart6;
-  }
-
-  gps_init(&gpsTx, &gpsTx_config);
 
   //-----------------------------------------------------------//
-  //---------------Inicializacion de LCD-----------------------//
+
+  //---------------Initialization the GPS-----------------------//
+
   {
-	  lcd_config.addres = 0x27;
-	  lcd_config.cols = 8;
-	  lcd_config.rows = 4;
-	  lcd_config.i2c = &hi2c2;
-	  lcd_config.mode = 1;
-	  lcd_config.timeout = 10;
+	  gpsTx_config.gtm = -4;			//Here we can change the time zone
+	  gpsTx_config.uart = &huart6;		//We are choosing the UART6 interface
   }
-  if (i2c_lcd_init(&lcd, &lcd_config) == LCD_OK){
+
+  gps_init(&gpsTx, &gpsTx_config);      //Initialization the GPS component
+
+  //-----------------------------------------------------------//
+
+  //---------------Initialization the LCD-----------------------//
+
+  {
+	  lcd_config.addres = 0x27;			//Set the lcd address
+	  lcd_config.cols = 8;				//Set the number of columns on the lcd
+	  lcd_config.rows = 4;				//Set the number of rows on the lcd
+	  lcd_config.i2c = &hi2c2;			//Set I2C interface
+	  lcd_config.mode = 1;				//Set mode LCD
+	  lcd_config.timeout = 10;			//TimeOut I2C Interface
+  }
+  if (i2c_lcd_init(&lcd, &lcd_config) == LCD_OK){				//Init the LCD
 	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 	  lcd_ok = LCD_OK;
   }
   else{
 	  lcd_ok = LCD_ERROR;
   }
+
   //-----------------------------------------------------------//
-  //---------------Inicializacion de Accel-----------------------//
+
+  //---------------Initialization the Accelerometer-----------------------//
+
   {
-  	  accel_config.addres = 0x68;
-  	  accel_config.i2c = &hi2c2;
-  	  accel_config.accel_range = AFS_SEL_2G;
-  	  accel_config.gyro_range = FS_SEL_250;
-  	  accel_config.clksel = CLK_PLL_XGYRO;
-  	  accel_config.timeout = 100;
-  	  accel_config.offset_pitch = 0;
-  	  accel_config.offset_roll = 0;
+  	  accel_config.addres = 0x68;				//Setting the accelerometer address
+  	  accel_config.i2c = &hi2c2;				//Set I2C interface
+  	  accel_config.accel_range = AFS_SEL_2G;	//Setting the accelerometer range
+  	  accel_config.gyro_range = FS_SEL_250;		//Setting the gyroscope range
+  	  accel_config.clksel = CLK_PLL_XGYRO;		//Setting the mpu clock
+  	  accel_config.timeout = 100;				//Timeout I2C interface
+  	  accel_config.offset_pitch = 0;			//Pitch Angle Offset
+  	  accel_config.offset_roll = 0;				//Roll Angle Offset
   }
 
   if(mpu_init(&accel, &accel_config)==MPU_OK){
   	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
   }
+
   //-----------------------------------------------------------//
-  //---------------Inicializacion de BMP280--------------------//
+
+  //---------------Initialization the BMP280--------------------//
+
   {
-	  bmp280_init_default_params(&bmp280.params);
-	  bmp280.addr = BMP280_I2C_ADDRESS_0;
-   	  bmp280.i2c = &hi2c2;
+	  bmp280_init_default_params(&bmp280.params);	//Setting the bmp280 default configurations
+	  bmp280.addr = BMP280_I2C_ADDRESS_0;			//Set bmp280 I2C address
+   	  bmp280.i2c = &hi2c2;							//Choosing I2C interface
   }
 
-  if (bmp280_init(&bmp280, &bmp280.params)) {
+  if (bmp280_init(&bmp280, &bmp280.params)) {		//Init BMP280
 	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
   }
+
   //-----------------------------------------------------------//
 
-  delays[0] = 0;
-  delays[1] = 0;
-  delays[2] = 0;
-  delays[3] = 0;
-  delays[4] = 0;
-  delays[5] = 0;
-  delays[6] = 0;
-  delays[7] = 0;
-
   /* USER CODE END 2 */
- 
- 
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
 
+	  //--------------------MAIN LOOP, DATA MEASUREMENT---------------//
+
 	  if ( HAL_GetTick()-lastTimeLoop > 1 ){
-		  delays[0] = HAL_GetTick();
+
 		  gps_process(&gpsTx);
 		  mpu_get_angles(&accel, lastAngs, angs, (HAL_GetTick()-lastTimeLoop)/1000);
 		  bmp280_read_float(&bmp280, &temperature, &pressure, &humidity);
@@ -298,12 +301,13 @@ int main(void)
 		  HAL_UART_Receive_IT(&huart7, (uint8_t*) bufferConfig, 1);
 
 		  lastTimeLoop = HAL_GetTick();
-		  delays[1] = HAL_GetTick() - delays[0];
 
 	  }
 
+	  //----------------------TAKING HEART DATA-----------------------//
+
 	  if ( HAL_GetTick()-lastTimeHeart > 1 ){
-		  delays[2] = HAL_GetTick();
+
 		  HAL_ADC_Start(&hadc3);
 		  if(HAL_ADC_PollForConversion(&hadc3, 10)==HAL_OK){
 			  heart = HAL_ADC_GetValue(&hadc3);
@@ -312,13 +316,12 @@ int main(void)
 		  }
 
 		  lastTimeHeart = HAL_GetTick();
-		  delays[3] = HAL_GetTick() - delays[2];
 
 	  }
 
-	  //----------------------------------Empaquetando datos--------------------------------------//
+	  //----------------------------------PACKING - SEND DATA--------------------------------------//
+
 	  if( HAL_GetTick()-lastTimeSend > 10 ){
-		  delays[4] = HAL_GetTick();
 
 		  if(nmroMsg == 1){
 
@@ -336,16 +339,14 @@ int main(void)
 		  }
 
 		  lastTimeSend = HAL_GetTick();
-		  delays[5] = HAL_GetTick() - delays[4];
 
 	  }
 
-	  //-------------------------------Mostrar datos por pantalla LCD------------------------------//
+	  //-------------------------------SHOW DATA IN LCD------------------------------//
+
 	  if ( HAL_GetTick()-lastTimeShowParent > 103 ){
-		  delays[6] = HAL_GetTick();
 
 		  if ( lcd_ok == LCD_OK && HAL_GetTick()-lastTimeShow > 0 && HAL_GetTick()-lastTimeShow < 10000){
-
 			  if (numLine == 1){
 				  i2c_lcd_setCursor(&lcd, 0, 0);
 				  size = sprintf(message, "%2i:%2i:%2i  A:%4.0f", gpsTx.data.hour, gpsTx.data.min, gpsTx.data.sec, altitude);
@@ -370,10 +371,8 @@ int main(void)
 				  i2c_lcd_print(&lcd, message, size);
 				  numLine = 1;
 			  }
-
 		  }
 		  else if ( lcd_ok == LCD_OK && HAL_GetTick()-lastTimeShow > 10000 && HAL_GetTick()-lastTimeShow < 15000){
-
 			  if (numLine == 1){
 				  i2c_lcd_setCursor(&lcd, 0, 0);
 				  size = sprintf(message, " %2d - %2d - %4d ", gpsTx.data.day, gpsTx.data.month, gpsTx.data.year);
@@ -398,7 +397,6 @@ int main(void)
 				  i2c_lcd_print(&lcd, message, size);
 				  numLine = 1;
 			  }
-
 		  }
 		  else{
 			  lastTimeShow = HAL_GetTick();
@@ -409,22 +407,19 @@ int main(void)
 			  size = sprintf(message, "*T%0.0f* *H%0.0f* *A%0.0f* "
 	  	  	  	  	  	  	  	  	  "*P%0.0f* *R%0.0f* "
 					  	  	  	  	  "*V%0.0f* *Z%d* *L%0.10f* *X%0.10f*\r\n",
-					  	  	  	  	  //"%u %u %u %u\r\n",
 									  temperature, humidity, altitude,
 									  angs[Angle_Pitch], angs[Angle_Roll],
 									  gpsTx.data.velocity, gpsTx.config.gtm, gpsTx.data.latitudDec, gpsTx.data.longitudDec);
-									  //delays[1], delays[3], delays[5], delays[7]);
 
 			  HAL_UART_Transmit(&huart7, (uint8_t*) message, size, 150);
 
 		  }
 
-		  delays[7] = HAL_GetTick() - delays[6];
-
 		  lastTimeShowParent = HAL_GetTick();
 
-
 	  }
+
+	  //--------------FUNCTION PRESS BUTTON FOR SET OFFSET ANGLES (PITCH AND ROLL)------------//
 
 	  if(isPressed()){
 

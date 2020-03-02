@@ -104,8 +104,8 @@ void mpu_get_angles(MPU_HandleTypeDef* dev, float* lastAngs, float* angs, float 
 	mpu_get_gyro(dev, &gx, &gy, &gz);
 	ang_p = (-1*(atan(ax/sqrt( pow(az,2) + pow(ay,2) ))*(180.0/3.141592)) - dev->config.offset_pitch);
 	ang_r = (-1*(atan(ay/sqrt( pow(az,2) + pow(ax,2) ))*(180.0/3.141592)) - dev->config.offset_roll);
-	*angs++ = 0.98*( *lastAngs++ + gx*dif ) + 0.02*ang_p;
-	*angs++ = 0.98*( *lastAngs++ + gy*dif ) + 0.02*ang_r;
+	*angs++ = 0.98*( *lastAngs++ + gx*dif ) + 0.02*ang_p;	//Filter Complement
+	*angs++ = 0.98*( *lastAngs++ + gy*dif ) + 0.02*ang_r;	//Filter Complement
 	*angs = *lastAngs + ((float)gy/131.0)*dif;
 }
 
